@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Веб-САПР — Мои проекты</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d0d1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: #16213e;
+            border-bottom: 1px solid #2a3a5e;
+            height: 60px;
+            flex-shrink: 0;
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #64b5f6;
+        }
+        .app-logo .logo-icon { font-size: 24px; }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: #a0b4c8;
+        }
+        .user-info #userNameDisplay {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .user-info #userNameDisplay:hover {
+            background: #2a3a5e;
+        }
+        .btn-change-name {
+            padding: 6px 16px;
+            background: #2a3a5e;
+            color: #a0b4c8;
+            border: 1px solid #3a4a6e;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-change-name:hover {
+            background: #3a4a6e;
+            color: #fff;
+        }
+        
+        /* ===== ОСНОВНАЯ ОБЛАСТЬ ===== */
+        .main-area {
+            flex: 1;
+            padding: 30px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .main-header h1 {
+            font-size: 28px;
+            font-weight: 300;
+            color: #e0e0e0;
+        }
+        .main-header h1 span {
+            color: #64b5f6;
+            font-weight: 600;
+        }
+        .btn-create {
+            padding: 10px 24px;
+            background: #64b5f6;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-create:hover {
+            background: #4a9fe0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(100, 181, 246, 0.3);
+        }
+        
+        /* ===== СЕТКА ПРОЕКТОВ ===== */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .project-card {
+            background: #16213e;
+            border-radius: 12px;
+            border: 1px solid #2a3a5e;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            border-color: #64b5f6;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        
+        .project-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .project-card .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e0e0e0;
+            word-break: break-word;
+        }
+        .project-card .card-type {
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .project-card .card-type.type-2d {
+            background: #1a2a5a;
+            color: #4488ff;
+        }
+        .project-card .card-type.type-3d {
+            background: #2a1a3a;
+            color: #ff44aa;
+        }
+        
+        .project-card .card-description {
+            color: #a0b4c8;
+            font-size: 13px;
+            margin-bottom: 12px;
+            min-height: 40px;
+        }
+        
+        .project-card .card-date {
+            color: #6a7a8e;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .project-card .card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .project-card .card-actions button {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .project-card .card-actions .btn-open-2d {
+            background: #2a3a5e;
+            color: #64b5f6;
+        }
+        .project-card .card-actions .btn-open-2d:hover {
+            background: #3a4a6e;
+        }
+        .project-card .card-actions .btn-open-3d {
+            background: #2a1a3a;
+            color: #ff44aa;
+        }
+        .project-card .card-actions .btn-open-3d:hover {
+            background: #3a2a4a;
+        }
+        .project-card .card-actions .btn-delete-card {
+            background: transparent;
+            color: #6a7a8e;
+            flex: 0 1 auto;
+            padding: 6px 12px;
+        }
+        .project-card .card-actions .btn-delete-card:hover {
+            background: #c62828;
+            color: #fff;
+        }
+        
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #6a7a8e;
+        }
+        .empty-state .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #a0b4c8;
+        }
+        .empty-state p {
+            font-size: 16px;
+        }
+        
+        /* ===== МОДАЛЬНОЕ ОКНО ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: #1a1a2e;
+            border-radius: 16px;
+            border: 1px solid #2a3a5e;
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+        }
+        .modal h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+        }
+        .modal .subtitle {
+            color: #6a7a8e;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        
+        .modal .form-group {
+            margin-bottom: 16px;
+        }
+        .modal .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #a0b4c8;
+            margin-bottom: 4px;
+        }
+        .modal .form-group input,
+        .modal .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d0d1a;
+            color: #e0e0e0;
+            border: 1px solid #2a3a5e;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .modal .form-group input:focus,
+        .modal .form-group textarea:focus {
+            outline: none;
+            border-color: #64b5f6;
+        }
+        .modal .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .modal .type-selector {
+            display: flex;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .modal .type-selector button {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #2a3a5e;
+            border-radius: 8px;
+            background: transparent;
+            color: #a0b4c8;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal .type-selector button:hover {
+            border-color: #3a4a6e;
+        }
+        .modal .type-selector button.active-2d {
+            border-color: #4488ff;
+            background: #1a2a5a;
+            color: #4488ff;
+        }
+        .modal .type-selector button.active-3d {
+            border-color: #ff44aa;
+            background: #2a1a3a;
+            color: #ff44aa;
+        }
+        
+        .modal .modal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .modal .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal .modal-actions .btn-create-project {
+            background: #64b5f6;
+            color: #1a1a2e;
+        }
+        .modal .modal-actions .btn-create-project:hover {
+            background: #4a9fe0;
+        }
+        .modal .modal-actions .btn-cancel {
+            background: transparent;
+            color: #a0b4c8;
+            border: 1px solid #2a3a5e;
+        }
+        .modal .modal-actions .btn-cancel:hover {
+            background: #2a3a5e;
+        }
+        
+        /* ===== АДАПТАЦИЯ ===== */
+        @media (max-width: 768px) {
+            .main-area { padding: 20px; }
+            .main-header { flex-direction: column; gap: 12px; align-items: stretch; }
+            .main-header h1 { font-size: 22px; }
+            .projects-grid { grid-template-columns: 1fr; }
+            .modal { padding: 24px; }
+            .top-bar { padding: 8px 16px; height: 50px; }
+            .app-logo { font-size: 16px; }
+            .app-logo .logo-icon { font-size: 20px; }
+            .user-info { font-size: 12px; }
+        }
+        
+        @media (max-width: 480px) {
+            .main-area { padding: 12px; }
+            .project-card { padding: 16px; }
+            .project-card .card-actions { flex-direction: column; }
+            .project-card .card-actions button { flex: 1; }
+            .modal .type-selector { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== ВЕРХНЯЯ ПАНЕЛЬ ===== -->
+    <div class="top-bar">
+        <div class="app-logo">
+            <span class="logo-icon">🛠</span>
+            <span>Веб-САПР</span>
+        </div>
+        <div class="user-info">
+            <span>👤 <span id="userNameDisplay" title="Нажмите чтобы изменить имя">...</span></span>
+            <button class="btn-change-name" onclick="changeUserName()">✏️ Имя</button>
+        </div>
+    </div>
+
+    <!-- ===== ОСНОВНАЯ ОБЛАСТЬ ===== -->
+    <div class="main-area">
+        <div class="main-header">
+            <h1>Мои <span>проекты</span></h1>
+            <button class="btn-create" onclick="openCreateModal()">➕ Создать проект</button>
+        </div>
+
+        <div class="projects-grid" id="projectsGrid">
+            <div class="empty-state">
+                <div class="empty-icon">📐</div>
+                <h2>Загрузка...</h2>
+                <p>Пожалуйста, подождите</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛЬНОЕ ОКНО ===== -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <h2>➕ Новый проект</h2>
+            <div class="subtitle">Выберите тип и укажите название</div>
+            
+            <form id="createForm">
+                <div class="form-group">
+                    <label>Название проекта</label>
+                    <input type="text" id="projectName" placeholder="Введите название..." required>
+                </div>
+                <div class="form-group">
+                    <label>Описание (необязательно)</label>
+                    <textarea id="projectDescription" placeholder="Краткое описание проекта..."></textarea>
+                </div>
+                
+                <label style="font-size:13px;color:#a0b4c8;display:block;margin-bottom:8px;">Тип проекта</label>
+                <div class="type-selector">
+                    <button type="button" class="active-2d" onclick="selectType('2d')" id="type2dBtn">📐 2D</button>
+                    <button type="button" onclick="selectType('3d')" id="type3dBtn">🌐 3D</button>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeCreateModal()">Отмена</button>
+                    <button type="submit" class="btn-create-project">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Подключаем базу и утилиты -->
+    <script src="js/user-id.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/php-shim.js"></script>
+
+    <script>
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ
+        // ============================================================
+        let selectedType = '2d';
+        
+        // ============================================================
+        // МОДАЛЬНОЕ ОКНО
+        // ============================================================
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+            document.getElementById('projectName').focus();
+        }
+        
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+        
+        function selectType(type) {
+            selectedType = type;
+            document.getElementById('type2dBtn').className = type === '2d' ? 'active-2d' : '';
+            document.getElementById('type3dBtn').className = type === '3d' ? 'active-3d' : '';
+        }
+        
+        // Закрытие по клику вне
+        document.getElementById('createModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCreateModal();
+        });
+        
+        // ============================================================
+        // ЗАГРУЗКА ПРОЕКТОВ
+        // ============================================================
+        async function loadProjects() {
+            const grid = document.getElementById('projectsGrid');
+            
+            try {
+                const response = await fetch('api/projects.php');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">⚠️</div>
+                            <h2>Ошибка</h2>
+                            <p>${data.error || 'Не удалось загрузить проекты'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const projects = data.projects || [];
+                
+                if (projects.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📐</div>
+                            <h2>Нет проектов</h2>
+                            <p>Создайте свой первый проект — 2D или 3D!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                for (const p of projects) {
+                    const type = p.project_type || '2d';
+                    const typeUpper = type.toUpperCase();
+                    const date = new Date(p.updated_at).toLocaleDateString('ru-RU', {
+                        day: '2-digit', month: '2-digit', year: 'numeric'
+                    });
+                    
+                    html += `
+                        <div class="project-card" data-id="${p.id}" data-type="${type}">
+                            <div class="card-header">
+                                <span class="card-title">${escapeHtml(p.name)}</span>
+                                <span class="card-type type-${type}">${typeUpper}</span>
+                            </div>
+                            <div class="card-description">${escapeHtml(p.description || 'Без описания')}</div>
+                            <div class="card-date">📅 ${date}</div>
+                            <div class="card-actions">
+                                <button class="btn-open-${type}" onclick="openProject(${p.id}, '${type}')">
+                                    ${type === '2d' ? '📐 Открыть 2D' : '🌐 Открыть 3D'}
+                                </button>
+                                <button class="btn-delete-card" onclick="deleteProject(${p.id}, event)">🗑</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                grid.innerHTML = html;
+                
+            } catch (e) {
+                console.error('Ошибка загрузки:', e);
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <h2>Ошибка соединения</h2>
+                        <p>${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Экранирование HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        
+        // ============================================================
+        // СОЗДАНИЕ ПРОЕКТА
+        // ============================================================
+        document.getElementById('createForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('projectName').value.trim();
+            const description = document.getElementById('projectDescription').value.trim();
+            
+            if (!name) {
+                alert('Введите название проекта');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('description', description);
+                formData.append('project_type', selectedType);
+                
+                const response = await fetch('api/projects.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeCreateModal();
+                    document.getElementById('projectName').value = '';
+                    document.getElementById('projectDescription').value = '';
+                    await loadProjects();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'не удалось создать проект'));
+                }
+            } catch (err) {
+                console.error('Ошибка создания:', err);
+                alert('Ошибка: ' + err.message);
+            }
+        });
+        
+        // ============================================================
+        // ОТКРЫТИЕ ПРОЕКТА
+        // ============================================================
+        function openProject(projectId, type) {
+            if (type === '2d') {
+                window.location.href = `dashboard_2d.html?id=${projectId}`;
+            } else {
+                window.location.href = `dashboard_3d.html?id=${projectId}`;
+            }
+        }
+        
+        // ============================================================
+        // УДАЛЕНИЕ ПРОЕКТА
+        // ============================================================
+        async function deleteProject(projectId, event) {
+            event.stopPropagation();
+            
+            if (!confirm('Удалить проект?')) return;
+            
+            try {
+                const response = await fetch('api/projects.php', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: projectId })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadProjects();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'не удалось удалить'));
+                }
+            } catch (err) {
+                console.error('Ошибка удаления:', err);
+                alert('Ошибка: ' + err.message);
+            }
+        }
+        
+        // ============================================================
+        // СМЕНА ИМЕНИ ПОЛЬЗОВАТЕЛЯ
+        // ============================================================
+        function changeUserName() {
+            const oldName = WebCADUser.getUserName();
+            const newName = prompt('Введите новое имя:', oldName);
+            if (newName && newName.trim() && newName.trim() !== oldName) {
+                WebCADUser.setUserName(newName.trim());
+                document.getElementById('userNameDisplay').textContent = newName.trim();
+            }
+        }
+        
+        // ============================================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+        (async function init() {
+            // Показать имя пользователя
+            document.getElementById('userNameDisplay').textContent = WebCADUser.getUserName();
+            
+            // Открыть БД
+            await WebCAD_DB.openDB();
+            
+            // Загрузить проекты
+            await loadProjects();
+            
+            // Клик по имени тоже открывает смену имени
+            document.getElementById('userNameDisplay').onclick = changeUserName;
+            
+            console.log('✅ Главная страница инициализирована');
+        })();
+    </script>
+</body>
+</html>
