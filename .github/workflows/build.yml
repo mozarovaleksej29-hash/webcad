@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -18,16 +18,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.2
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew || true
+      # ✅ Генерируем gradlew с корректным jar
+      - name: Generate Gradle wrapper
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
+          echo "--- Wrapper files: ---"
+          ls -la gradle/wrapper/
 
       - name: Build APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
         continue-on-error: true
 
       - name: Upload APK
@@ -35,5 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: webcad-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
