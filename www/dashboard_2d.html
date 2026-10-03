@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Веб-САПР — 2D Редактор</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Шапка */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #16213e;
+            border-bottom: 1px solid #2a3a5e;
+            height: 44px;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+        .top-bar .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64b5f6;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .btn {
+            padding: 6px 12px;
+            background: #2a3a5e;
+            color: #a0b4c8;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: #3a4a6e; color: #fff; }
+        .btn.success { background: #4caf50; color: #fff; }
+        .btn.success:hover { background: #43a047; }
+        .btn.danger { background: #c62828; color: #fff; }
+        .btn.danger:hover { background: #b71c1c; }
+        
+        /* Canvas */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #cadCanvas {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        /* Статус */
+        .status-bar {
+            padding: 6px 12px;
+            background: #16213e;
+            border-top: 1px solid #2a3a5e;
+            font-size: 11px;
+            color: #6a7a8e;
+            height: 30px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Загрузка */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 13, 26, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: #64b5f6;
+        }
+        .loading-overlay.hidden { display: none; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #2a3a5e;
+            border-top-color: #64b5f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <!-- Шапка -->
+    <div class="top-bar">
+        <button class="btn" onclick="goBack()">◀ Назад</button>
+        <div class="title" id="projectTitle">Загрузка...</div>
+        <button class="btn success" onclick="saveProject()">💾 Сохранить</button>
+    </div>
+    
+    <!-- Canvas -->
+    <div class="canvas-area">
+        <canvas id="cadCanvas"></canvas>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <div>Загрузка проекта...</div>
+        </div>
+    </div>
+    
+    <!-- Статус -->
+    <div class="status-bar">
+        <span id="statusText">Готов</span>
+        <span id="coordDisplay">X: 0, Y: 0</span>
+    </div>
+    
+    <!-- Подключаем базу -->
+    <script src="js/user-id.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/php-shim.js"></script>
+    
+    <script>
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ
+        // ============================================================
+        let currentProjectId = null;
+        let currentProject = null;
+        let canvas = null;
+        let ctx = null;
+        
+        // ============================================================
+        // НАВИГАЦИЯ
+        // ============================================================
+        function goBack() {
+            if (window.confirm('Выйти из редактора? Несохранённые изменения будут потеряны.')) {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // ============================================================
+        // СОХРАНЕНИЕ
+        // ============================================================
+        async function saveProject() {
+            if (!currentProjectId) return;
+            
+            try {
+                await WebCAD_DB.updateProject(currentProjectId, {
+                    objects: currentProject ? currentProject.objects : []
+                });
+                document.getElementById('statusText').textContent = '✅ Сохранено';
+                setTimeout(() => {
+                    document.getElementById('statusText').textContent = 'Готов';
+                }, 1500);
+            } catch (e) {
+                console.error('Ошибка сохранения:', e);
+                document.getElementById('statusText').textContent = '❌ Ошибка сохранения';
+            }
+        }
+        
+        // ============================================================
+        // CANVAS
+        // ============================================================
+        function resizeCanvas() {
+            const area = canvas.parentElement;
+            const rect = area.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            render();
+        }
+        
+        function render() {
+            // Белый фон
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Сетка 10 мм
+            drawGrid();
+            
+            // Оси
+            drawAxes();
+        }
+        
+        function drawGrid() {
+            const step = 20;  // пикселей на 10 мм
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            ctx.strokeStyle = '#e8ecf1';
+            ctx.lineWidth = 1;
+            
+            // Вертикальные
+            for (let x = cx % step; x < w; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            
+            // Горизонтальные
+            for (let y = cy % step; y < h; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawAxes() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            // Ось X
+            ctx.strokeStyle = '#4a6a8a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, cy);
+            ctx.lineTo(w, cy);
+            ctx.stroke();
+            
+            // Ось Y
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, h);
+            ctx.stroke();
+            
+            // Подписи
+            ctx.fillStyle = '#5a7a9a';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('X', w - 5, cy - 5);
+            ctx.fillText('Y', cx + 5, 15);
+        }
+        
+        // ============================================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+        (async function init() {
+            canvas = document.getElementById('cadCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Открыть БД
+            await WebCAD_DB.openDB();
+            
+            // Получить ID проекта из URL
+            const params = new URLSearchParams(window.location.search);
+            const projectId = params.get('id');
+            
+            if (projectId) {
+                currentProjectId = Number(projectId);
+                currentProject = await WebCAD_DB.getProject(currentProjectId);
+                
+                if (currentProject) {
+                    document.getElementById('projectTitle').textContent = currentProject.name;
+                    document.title = currentProject.name + ' — 2D';
+                } else {
+                    document.getElementById('projectTitle').textContent = 'Проект не найден';
+                    document.getElementById('statusText').textContent = '❌ Проект не найден';
+                }
+            } else {
+                document.getElementById('projectTitle').textContent = 'Без проекта';
+                document.getElementById('statusText').textContent = '⚠️ ID проекта не указан';
+            }
+            
+            // Настроить canvas
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Скрыть загрузку
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('statusText').textContent = '✅ 2D-редактор готов';
+            
+            console.log('✅ 2D редактор инициализирован');
+            console.log('Проект:', currentProject);
+        })();
+    </script>
+</body>
+</html>
